@@ -1,565 +1,1512 @@
-(() => {
-  "use strict";
+"use strict";
 
-  const app = document.getElementById("app");
 
-  const state = {
-    turn: 1,
-    trust: 62,
-    reach: 54,
-    anger: 35,
-    tension: 28,
-    aster: 3,
-    vara: 3,
-    novi: 3,
-    outcome: null,
-    log: []
-  };
+/* ==================================================
+   MEME ASSETS
+================================================== */
 
-  const events = [
-    {
-      title: "Border clash reported",
-      copy: "A skirmish took place near the Aster–Vara border. Neither side has independently confirmed who fired first.",
-      evidence: [
-        ["Confirmed", "Both governments acknowledge that a clash occurred."],
-        ["Unclear", "The first shot cannot yet be independently verified."],
-        ["Trend", "Public anger is rising in both countries."]
-      ],
-      choices: [
-        {
-          title: "Report only what is confirmed",
-          desc: "Keep the headline narrow and mark the cause as unverified.",
-          effect: { trust: 7, reach: -2, anger: -7, tension: -6 },
-          note: "Verification before attribution slowed the reaction."
-        },
-        {
-          title: "Lead with the accusation",
-          desc: "Frame Vara as the aggressor and use the strongest interpretation.",
-          effect: { trust: -8, reach: 9, anger: 13, tension: 14 },
-          note: "A confident accusation spread faster than the evidence supported."
-        },
-        {
-          title: "Publish the dramatic version",
-          desc: "Use an urgent headline and emphasize the possibility of a wider war.",
-          effect: { trust: -12, reach: 13, anger: 18, tension: 18 },
-          note: "The story travelled quickly, but fear travelled with it."
-        },
-        {
-          title: "Hold the story",
-          desc: "Wait for stronger evidence before publishing anything.",
-          effect: { trust: 3, reach: -9, anger: -3, tension: -4 },
-          note: "Silence reduced immediate escalation but cost audience attention."
-        }
-      ]
-    },
-    {
-      title: "A video appears online",
-      copy: "A short clip appears to show Vara troops moving toward the border. The clip has no verified timestamp.",
-      evidence: [
-        ["Confirmed", "The video exists and shows military vehicles."],
-        ["Unclear", "The location and date are unverified."],
-        ["Risk", "Old footage could be mistaken for a new event."]
-      ],
-      choices: [
-        {
-          title: "Flag the clip as unverified",
-          desc: "Show it only with a clear warning about what is unknown.",
-          effect: { trust: 6, reach: 1, anger: -4, tension: -5 },
-          note: "Context reduced the chance that old footage would become a new trigger."
-        },
-        {
-          title: "Treat it as breaking evidence",
-          desc: "Publish it as proof that Vara is preparing to attack.",
-          effect: { trust: -10, reach: 10, anger: 14, tension: 15 },
-          note: "An unverified clip became accepted as evidence."
-        },
-        {
-          title: "Question the clip publicly",
-          desc: "Ask viewers to inspect its source, date and location.",
-          effect: { trust: 8, reach: 3, anger: -6, tension: -7 },
-          note: "Source-checking turned a viral clip into a verification exercise."
-        },
-        {
-          title: "Ignore the clip",
-          desc: "Do not give the footage any additional reach.",
-          effect: { trust: 2, reach: -4, anger: -2, tension: -2 },
-          note: "The clip still circulated elsewhere, but your outlet did not amplify it."
-        }
-      ]
-    },
-    {
-      title: "Leadership statement",
-      copy: "Aster's leader says diplomacy remains possible. Vara's leader says the military is ready to respond to any further incursion.",
-      evidence: [
-        ["Confirmed", "Both statements were delivered publicly."],
-        ["Context", "Neither side has announced a formal declaration of war."],
-        ["Public", "Citizens are divided over what the statements mean."]
-      ],
-      choices: [
-        {
-          title: "Compare both statements",
-          desc: "Show the claims side by side and separate facts from rhetoric.",
-          effect: { trust: 7, reach: 2, anger: -5, tension: -8 },
-          note: "Comparing claims lowered the temperature of the debate."
-        },
-        {
-          title: "Declare that war is imminent",
-          desc: "Turn the statements into a countdown to conflict.",
-          effect: { trust: -9, reach: 12, anger: 15, tension: 16 },
-          note: "Predictions were treated as facts and pressure intensified."
-        },
-        {
-          title: "Focus on the strongest quote",
-          desc: "Use the most threatening sentence as the headline.",
-          effect: { trust: -5, reach: 9, anger: 10, tension: 11 },
-          note: "Selective framing made the exchange appear more hostile than the full statements."
-        },
-        {
-          title: "Publish a neutral update",
-          desc: "Summarize the positions without predicting what happens next.",
-          effect: { trust: 5, reach: 0, anger: -3, tension: -4 },
-          note: "A restrained summary left room for diplomacy."
-        }
-      ]
-    },
-    {
-      title: "Civilian reports spread",
-      copy: "Posts claim civilians are fleeing the border. Several images are circulating, but some cannot be traced to the current event.",
-      evidence: [
-        ["Confirmed", "Some residents have reported leaving the area."],
-        ["Unclear", "Several images have no reliable source or date."],
-        ["Impact", "Public fear is now affecting both sides."]
-      ],
-      choices: [
-        {
-          title: "Verify before using images",
-          desc: "Publish only material with a reliable source and clear context.",
-          effect: { trust: 8, reach: 0, anger: -6, tension: -7 },
-          note: "Verification prevented unrelated images from inflaming the crisis."
-        },
-        {
-          title: "Publish the most shocking images",
-          desc: "Use emotional visuals to drive attention to the crisis.",
-          effect: { trust: -10, reach: 13, anger: 17, tension: 16 },
-          note: "Emotional imagery drove attention faster than context could catch up."
-        },
-        {
-          title: "Explain what cannot be verified",
-          desc: "Show uncertainty openly and explain how viewers can check sources.",
-          effect: { trust: 10, reach: 4, anger: -8, tension: -9 },
-          note: "The audience was given tools to judge the evidence themselves."
-        },
-        {
-          title: "Do not cover the story",
-          desc: "Avoid the topic entirely until the situation becomes clearer.",
-          effect: { trust: 2, reach: -7, anger: -2, tension: -3 },
-          note: "Your outlet avoided amplification, but others filled the gap."
-        }
-      ]
-    },
-    {
-      title: "Anonymous leak",
-      copy: "An anonymous account releases documents claiming that one side planned the first attack. The files look convincing, but their origin is unknown.",
-      evidence: [
-        ["Confirmed", "The documents are circulating widely online."],
-        ["Unclear", "Their source and chain of custody cannot be verified."],
-        ["Pressure", "Competitors are publishing before you can verify them."]
-      ],
-      choices: [
-        {
-          title: "Verify the documents",
-          desc: "Delay publication until the source and authenticity can be checked.",
-          effect: { trust: 7, reach: -3, anger: -5, tension: -6 },
-          note: "Verification cost speed, but prevented an unverified leak from becoming accepted fact."
-        },
-        {
-          title: "Publish with a warning",
-          desc: "Publish the documents while clearly stating what remains unverified.",
-          effect: { trust: 2, reach: 7, anger: 3, tension: 2 },
-          note: "The audience saw the claim, but also saw the uncertainty around it."
-        },
-        {
-          title: "Publish as proof",
-          desc: "Present the documents as confirmation that the other side planned the conflict.",
-          effect: { trust: -11, reach: 12, anger: 16, tension: 16 },
-          note: "A disputed leak became a powerful narrative before anyone could verify it."
-        },
-        {
-          title: "Ignore the leak",
-          desc: "Do not mention the documents until someone independently verifies them.",
-          effect: { trust: 4, reach: -5, anger: -1, tension: -2 },
-          note: "You avoided amplification, but the story continued elsewhere."
-        }
-      ]
-    },
-    {
-      title: "Market panic",
-      copy: "Rumors spread that a major energy supplier will stop exports. Shops begin reporting unusual demand for fuel and food.",
-      evidence: [
-        ["Confirmed", "Some suppliers have reported delays."],
-        ["Unclear", "There is no confirmed shutdown announcement."],
-        ["Effect", "Fear is causing people to stockpile supplies."]
-      ],
-      choices: [
-        {
-          title: "Explain what is known",
-          desc: "Separate confirmed shortages from rumors and explain what remains uncertain.",
-          effect: { trust: 8, reach: 1, anger: -6, tension: -6 },
-          note: "Clear context reduced panic without hiding the disruption."
-        },
-        {
-          title: "Headline the shortage",
-          desc: "Lead with the most alarming possibility to capture attention.",
-          effect: { trust: -7, reach: 11, anger: 13, tension: 10 },
-          note: "The warning became a self-fulfilling cycle as more people rushed to stockpile."
-        },
-        {
-          title: "Publish the rumor as breaking news",
-          desc: "State that the shutdown is happening before it is confirmed.",
-          effect: { trust: -14, reach: 15, anger: 20, tension: 17 },
-          note: "A rumor became a headline, and the headline changed real behaviour."
-        },
-        {
-          title: "Wait for the official notice",
-          desc: "Hold publication until the supplier confirms the situation.",
-          effect: { trust: 3, reach: -8, anger: -2, tension: -3 },
-          note: "You lost the race to publish, but avoided adding to the panic."
-        }
-      ]
-    },
-    {
-      title: "AI-generated speech clip",
-      copy: "A short audio clip appears to show Vara's leader ordering an attack. Experts online disagree about whether it is authentic.",
-      evidence: [
-        ["Confirmed", "The clip exists and appears to feature the leader's voice."],
-        ["Unclear", "No independent lab has confirmed whether it is synthetic."],
-        ["Risk", "The clip is already being reposted without context."]
-      ],
-      choices: [
-        {
-          title: "Label it unverified",
-          desc: "Explain the uncertainty and avoid presenting the clip as proof.",
-          effect: { trust: 8, reach: 2, anger: -5, tension: -6 },
-          note: "You treated uncertainty as information instead of hiding it."
-        },
-        {
-          title: "Ask experts and pause",
-          desc: "Show the clip but delay conclusions until credible analysis is available.",
-          effect: { trust: 10, reach: -1, anger: -5, tension: -7 },
-          note: "The audience learned that uncertainty can be a reason to verify, not a reason to guess."
-        },
-        {
-          title: "Call it authentic",
-          desc: "Use the clip as proof that an attack order was given.",
-          effect: { trust: -13, reach: 14, anger: 18, tension: 19 },
-          note: "A disputed AI clip was treated as a fact and rapidly escalated the crisis."
-        },
-        {
-          title: "Dismiss it as fake",
-          desc: "Declare the clip fabricated before its authenticity is established.",
-          effect: { trust: -6, reach: 7, anger: 7, tension: 7 },
-          note: "Rejecting a claim without evidence was still a form of overconfidence."
-        }
-      ]
-    },
-    {
-      title: "Ceasefire proposal",
-      copy: "After days of rising tension, negotiators propose a temporary ceasefire. Social media is split between optimism and calls for retaliation.",
-      evidence: [
-        ["Confirmed", "Both governments say talks are underway."],
-        ["Unclear", "The ceasefire has not yet been signed."],
-        ["Choice", "The public now expects your outlet to frame what happens next."]
-      ],
-      choices: [
-        {
-          title: "Explain the proposal",
-          desc: "Describe what has been agreed, what has not, and what could still go wrong.",
-          effect: { trust: 9, reach: 2, anger: -9, tension: -10 },
-          note: "Specific context gave people room to judge the proposal without panic."
-        },
-        {
-          title: "Declare victory",
-          desc: "Frame the ceasefire as proof that one side has won.",
-          effect: { trust: -4, reach: 8, anger: 4, tension: 4 },
-          note: "Turning a fragile pause into a victory claim hardened both sides."
-        },
-        {
-          title: "Predict the next attack",
-          desc: "Use the uncertainty to suggest that violence will return immediately.",
-          effect: { trust: -10, reach: 12, anger: 14, tension: 14 },
-          note: "A prediction became a source of fear even though the evidence was incomplete."
-        },
-        {
-          title: "Give the proposal space",
-          desc: "Report the development without adding a dramatic interpretation.",
-          effect: { trust: 6, reach: 0, anger: -6, tension: -7 },
-          note: "A restrained report gave diplomacy time to work."
-        }
-      ]
-    }
-  ];
+const memes = {
 
-  function clamp(value) {
-    return Math.max(0, Math.min(100, value));
-  }
+    happy:
+        "assets/happy-cat.jpg",
 
-  function applyEffect(effect) {
-    state.trust = clamp(state.trust + effect.trust);
-    state.reach = clamp(state.reach + effect.reach);
-    state.anger = clamp(state.anger + effect.anger);
-    state.tension = clamp(state.tension + effect.tension);
+    confused:
+        "assets/confused-cat.jpg",
 
-    if (state.tension >= 55) {
-      state.aster = Math.max(1, state.aster - 1);
-      state.vara = Math.max(1, state.vara - 1);
+    outrage:
+        "assets/angry-cat.jpg",
+
+    panic:
+        "assets/panic-cat.jpg",
+
+    smug:
+        "assets/smug-cat.jpg",
+
+    chaos:
+        "assets/chaos-cat.jpg",
+
+    dead:
+        "assets/dead-cat.jpg"
+
+};
+
+
+/* ==================================================
+   FACTIONS
+================================================== */
+
+const factions = [
+
+    {
+        id: "aster",
+
+        name: "ASTER",
+
+        symbol: "●",
+
+        strength: 60,
+
+        anger: 20,
+
+        trust: 70,
+
+        state: "CALM"
+    },
+
+
+    {
+        id: "vara",
+
+        name: "VARA",
+
+        symbol: "■",
+
+        strength: 60,
+
+        anger: 20,
+
+        trust: 65,
+
+        state: "CALM"
+    },
+
+
+    {
+        id: "novi",
+
+        name: "NOVI",
+
+        symbol: "▲",
+
+        strength: 45,
+
+        anger: 15,
+
+        trust: 75,
+
+        state: "WATCHING"
     }
 
-    if (state.tension <= 18) {
-      state.novi = Math.min(5, state.novi + 1);
-    }
-  }
+];
 
-  function getOutcome() {
-    if (state.tension <= 18 && state.trust >= 68) {
-      return {
-        title: "DE-ESCALATION",
-        body: "The crisis cooled before either side committed to a wider conflict.",
-        details: [
-          "Public anger remained containable.",
-          "Diplomatic space stayed open.",
-          "Your outlet kept most of its credibility."
+
+/* ==================================================
+   GAME STATE
+================================================== */
+
+const state = {
+
+    turn: 0,
+
+    maxTurns: 8,
+
+    trust: 70,
+
+    reach: 50,
+
+    tension: 20
+
+};
+
+
+/* ==================================================
+   EVENTS
+================================================== */
+
+const events = [
+
+    {
+        title:
+            "BORDER CLASH",
+
+        text:
+            "Aster and Vara report a brief clash near a disputed border. Neither side has independently confirmed who fired first.",
+
+        sources:
+            "2 statements · 1 unverified video · no independent confirmation",
+
+        choices: [
+
+            {
+                image: memes.happy,
+
+                title:
+                    "WAIT FOR CONFIRMATION",
+
+                caption:
+                    "Report only what can actually be verified.",
+
+                type:
+                    "responsible"
+            },
+
+
+            {
+                image: memes.confused,
+
+                title:
+                    "REPORT THE FACTS",
+
+                caption:
+                    "A clash happened. The cause is unclear.",
+
+                type:
+                    "neutral"
+            },
+
+
+            {
+                image: memes.outrage,
+
+                title:
+                    "BLAME VARA",
+
+                caption:
+                    "Give the audience someone to blame.",
+
+                type:
+                    "inflammatory"
+            },
+
+
+            {
+                image: memes.panic,
+
+                title:
+                    "BREAKING: WAR",
+
+                caption:
+                    "Turn a clash into a crisis.",
+
+                type:
+                    "sensational"
+            }
+
         ]
-      };
-    }
+    },
 
-    if (state.tension >= 58 || state.anger >= 70) {
-      return {
-        title: "ESCALATION",
-        body: "The information environment amplified fear until military action became harder to stop.",
-        details: [
-          "Public anger pushed leaders toward confrontation.",
-          "Confident narratives moved faster than verification.",
-          "Your influence grew as the crisis worsened."
+
+    {
+        title:
+            "THE VIDEO",
+
+        text:
+            "A dramatic 12-second clip appears online. It seems to show civilians running from an attack, but the date and location cannot be confirmed.",
+
+        sources:
+            "viral clip · unknown source · metadata unavailable",
+
+        choices: [
+
+            {
+                image: memes.happy,
+
+                title:
+                    "VERIFY THE CLIP",
+
+                caption:
+                    "Check origin, date and context.",
+
+                type:
+                    "responsible"
+            },
+
+
+            {
+                image: memes.confused,
+
+                title:
+                    "PUBLISH WITH A WARNING",
+
+                caption:
+                    "Show it, but clearly flag uncertainty.",
+
+                type:
+                    "neutral"
+            },
+
+
+            {
+                image: memes.outrage,
+
+                title:
+                    "USE THE STRONGEST FRAME",
+
+                caption:
+                    "Choose the image that creates maximum emotion.",
+
+                type:
+                    "inflammatory"
+            },
+
+
+            {
+                image: memes.panic,
+
+                title:
+                    "GO VIRAL WITH IT",
+
+                caption:
+                    "Post first. Verify later.",
+
+                type:
+                    "sensational"
+            }
+
         ]
-      };
+    },
+
+
+    {
+        title:
+            "THE RUMOUR",
+
+        text:
+            "Posts claim Vara has secretly moved troops toward the border. No official source has confirmed the claim.",
+
+        sources:
+            "hundreds of reposts · one anonymous account",
+
+        choices: [
+
+            {
+                image: memes.happy,
+
+                title:
+                    "DON'T AMPLIFY IT",
+
+                caption:
+                    "Unverified claims stay unreported.",
+
+                type:
+                    "responsible"
+            },
+
+
+            {
+                image: memes.confused,
+
+                title:
+                    "REPORT THE RUMOUR AS A RUMOUR",
+
+                caption:
+                    "Make the uncertainty impossible to miss.",
+
+                type:
+                    "neutral"
+            },
+
+
+            {
+                image: memes.outrage,
+
+                title:
+                    "ASK: WHAT ARE THEY HIDING?",
+
+                caption:
+                    "Turn uncertainty into suspicion.",
+
+                type:
+                    "inflammatory"
+            },
+
+
+            {
+                image: memes.panic,
+
+                title:
+                    "TROOPS AT THE BORDER",
+
+                caption:
+                    "Present the claim as established fact.",
+
+                type:
+                    "sensational"
+            }
+
+        ]
+    },
+
+
+    {
+        title:
+            "THE LEAK",
+
+        text:
+            "An anonymous account posts screenshots allegedly showing a military order. The document cannot yet be authenticated.",
+
+        sources:
+            "screenshots · anonymous account · no original document",
+
+        choices: [
+
+            {
+                image: memes.happy,
+
+                title:
+                    "AUTHENTICATE FIRST",
+
+                caption:
+                    "Don't mistake a screenshot for evidence.",
+
+                type:
+                    "responsible"
+            },
+
+
+            {
+                image: memes.confused,
+
+                title:
+                    "REPORT THE EXISTENCE OF THE CLAIM",
+
+                caption:
+                    "Separate the claim from the fact.",
+
+                type:
+                    "neutral"
+            },
+
+
+            {
+                image: memes.outrage,
+
+                title:
+                    "ASK WHY THEY DENY IT",
+
+                caption:
+                    "Turn uncertainty into suspicion.",
+
+                type:
+                    "inflammatory"
+            },
+
+
+            {
+                image: memes.panic,
+
+                title:
+                    "EXCLUSIVE: SECRET ORDER",
+
+                caption:
+                    "Make the leak the story.",
+
+                type:
+                    "sensational"
+            }
+
+        ]
+    },
+
+
+    {
+        title:
+            "THE CROWD",
+
+        text:
+            "A protest begins in Aster after a viral post claims Vara deliberately targeted civilians. The original post contains no source.",
+
+        sources:
+            "viral post · protest footage · claim unverified",
+
+        choices: [
+
+            {
+                image: memes.happy,
+
+                title:
+                    "SLOW DOWN",
+
+                caption:
+                    "Ask what is actually known.",
+
+                type:
+                    "responsible"
+            },
+
+
+            {
+                image: memes.confused,
+
+                title:
+                    "COVER THE PROTEST",
+
+                caption:
+                    "Report what people are saying without endorsing it.",
+
+                type:
+                    "neutral"
+            },
+
+
+            {
+                image: memes.outrage,
+
+                title:
+                    "SHOW THE ANGER",
+
+                caption:
+                    "Lead with the most emotional moments.",
+
+                type:
+                    "inflammatory"
+            },
+
+
+            {
+                image: memes.panic,
+
+                title:
+                    "THE PEOPLE DEMAND WAR",
+
+                caption:
+                    "Turn a protest into a national mood.",
+
+                type:
+                    "sensational"
+            }
+
+        ]
+    },
+
+
+    {
+        title:
+            "AI IMAGE",
+
+        text:
+            "A realistic image appears showing smoke over a major city. Reverse-search results suggest it may have been AI-generated.",
+
+        sources:
+            "viral image · reverse-search conflict · provenance unclear",
+
+        choices: [
+
+            {
+                image: memes.happy,
+
+                title:
+                    "FLAG IT AS UNVERIFIED",
+
+                caption:
+                    "The image may not be authentic.",
+
+                type:
+                    "responsible"
+            },
+
+
+            {
+                image: memes.confused,
+
+                title:
+                    "PUBLISH WITH CONTEXT",
+
+                caption:
+                    "Explain what is known and unknown.",
+
+                type:
+                    "neutral"
+            },
+
+
+            {
+                image: memes.outrage,
+
+                title:
+                    "USE IT AS ILLUSTRATION",
+
+                caption:
+                    "Let the image carry the emotion.",
+
+                type:
+                    "inflammatory"
+            },
+
+
+            {
+                image: memes.panic,
+
+                title:
+                    "CITY UNDER ATTACK",
+
+                caption:
+                    "Treat the image as proof.",
+
+                type:
+                    "sensational"
+            }
+
+        ]
+    },
+
+
+    {
+        title:
+            "THE RESPONSE",
+
+        text:
+            "Aster announces military exercises. Vara calls them a provocation. Novi offers to mediate.",
+
+        sources:
+            "official statements · independent observers",
+
+        choices: [
+
+            {
+                image: memes.happy,
+
+                title:
+                    "AMPLIFY MEDIATION",
+
+                caption:
+                    "Give attention to the de-escalation effort.",
+
+                type:
+                    "responsible"
+            },
+
+
+            {
+                image: memes.confused,
+
+                title:
+                    "REPORT BOTH SIDES",
+
+                caption:
+                    "Let audiences compare the claims.",
+
+                type:
+                    "neutral"
+            },
+
+
+            {
+                image: memes.outrage,
+
+                title:
+                    "FOCUS ON THE THREAT",
+
+                caption:
+                    "Lead with military language.",
+
+                type:
+                    "inflammatory"
+            },
+
+
+            {
+                image: memes.panic,
+
+                title:
+                    "THIS IS IT",
+
+                caption:
+                    "Make the confrontation the headline.",
+
+                type:
+                    "sensational"
+            }
+
+        ]
+    },
+
+
+    {
+        title:
+            "THE FINAL DECISION",
+
+        text:
+            "A final unverified claim appears online: Vara is preparing to launch an attack tonight.",
+
+        sources:
+            "anonymous post · no official confirmation · panic spreading",
+
+        choices: [
+
+            {
+                image: memes.happy,
+
+                title:
+                    "DO NOT PUBLISH YET",
+
+                caption:
+                    "Unverified breaking claims can wait.",
+
+                type:
+                    "responsible"
+            },
+
+
+            {
+                image: memes.confused,
+
+                title:
+                    "REPORT THE UNCERTAINTY",
+
+                caption:
+                    "Tell people the claim exists and remains unverified.",
+
+                type:
+                    "neutral"
+            },
+
+
+            {
+                image: memes.outrage,
+
+                title:
+                    "ASK IF WAR IS COMING",
+
+                caption:
+                    "Put fear at the centre of the story.",
+
+                type:
+                    "inflammatory"
+            },
+
+
+            {
+                image: memes.panic,
+
+                title:
+                    "BREAKING: ATTACK TONIGHT",
+
+                caption:
+                    "Publish the claim as fact.",
+
+                type:
+                    "sensational"
+            }
+
+        ]
     }
 
-    return {
-      title: "INFORMATION CHAOS",
-      body: "No side could agree on what was true, and trust in the information environment fractured.",
-      details: [
-        "Competing narratives became more important than evidence.",
-        "Citizens split into opposing information bubbles.",
-        "The crisis remained unstable."
-      ]
-    };
-  }
+];
 
-  function renderWorld() {
-    const units = [];
 
-    const asterPositions = [[14,26],[19,34],[25,22],[31,40],[36,29]];
-    const varaPositions = [[65,25],[72,34],[78,22],[85,42],[80,49]];
-    const noviPositions = [[39,78],[47,71],[55,80],[61,68],[52,88]];
+/* ==================================================
+   REACTION MESSAGES
+================================================== */
 
-    asterPositions.slice(0, state.aster).forEach(([x,y], i) => {
-      units.push(`<div class="unit circle ${i < 2 && state.tension > 55 ? "hit" : ""}" style="left:${x}%;top:${y}%"></div>`);
-    });
+const reactions = {
 
-    varaPositions.slice(0, state.vara).forEach(([x,y], i) => {
-      units.push(`<div class="unit square ${i < 2 && state.tension > 55 ? "hit" : ""}" style="left:${x}%;top:${y}%"></div>`);
-    });
+    responsible: {
 
-    noviPositions.slice(0, state.novi).forEach(([x,y]) => {
-      units.push(`<div class="unit triangle" style="left:${x}%;top:${y}%"></div>`);
-    });
+        image:
+            memes.happy,
 
-    return `
-      <div class="world" aria-label="World simulation">
-        <div class="territory aster">Aster</div>
-        <div class="territory vara">Vara</div>
-        <div class="territory novi">Novi</div>
-        ${units.join("")}
-      </div>
-    `;
-  }
+        title:
+            "THE INTERNET IS SUSPICIOUSLY CALM",
 
-  function renderStats() {
-    const rows = [
-      ["Trust", state.trust],
-      ["Reach", state.reach],
-      ["Public anger", state.anger],
-      ["Tension", state.tension]
-    ];
+        text:
+            "You slowed the story down. The post spreads more slowly, but people have time to verify what actually happened."
 
-    return `
-      <div class="stats">
-        ${rows.map(([name, value]) => `
-          <div class="stat">
-            <span>${name}</span>
-            <strong>${Math.round(value)}</strong>
-            <div class="bar"><i style="width:${Math.round(value)}%"></i></div>
-          </div>
-        `).join("")}
-      </div>
-    `;
-  }
+    },
 
-  function renderFeed() {
-    if (!state.log.length) {
-      return `<div class="muted">No decisions yet.</div>`;
+
+    neutral: {
+
+        image:
+            memes.confused,
+
+        title:
+            "THE GROUP CHAT IS CONFUSED",
+
+        text:
+            "Nobody knows exactly what happened yet. At least you didn't manufacture certainty."
+
+    },
+
+
+    inflammatory: {
+
+        image:
+            memes.outrage,
+
+        title:
+            "THE OUTRAGE MACHINE IS ONLINE",
+
+        text:
+            "Your framing gives people someone to blame. Anger rises and the factions harden their positions."
+
+    },
+
+
+    sensational: {
+
+        image:
+            memes.panic,
+
+        title:
+            "OH NO. IT'S EVERYWHERE.",
+
+        text:
+            "Reach spikes. So does fear. Nobody has verified the story, but everyone has already reacted."
+
     }
 
+};
+
+
+/* ==================================================
+   DOM
+================================================== */
+
+const turnNumber =
+    document.getElementById(
+        "turnNumber"
+    );
+
+
+const world =
+    document.getElementById(
+        "world"
+    );
+
+
+const trust =
+    document.getElementById(
+        "trust"
+    );
+
+
+const reach =
+    document.getElementById(
+        "reach"
+    );
+
+
+const tension =
+    document.getElementById(
+        "tension"
+    );
+
+
+const eventTitle =
+    document.getElementById(
+        "eventTitle"
+    );
+
+
+const eventText =
+    document.getElementById(
+        "eventText"
+    );
+
+
+const sources =
+    document.getElementById(
+        "sources"
+    );
+
+
+const choices =
+    document.getElementById(
+        "choices"
+    );
+
+
+const reactionSection =
+    document.getElementById(
+        "reactionSection"
+    );
+
+
+const reactionCat =
+    document.getElementById(
+        "reactionCat"
+    );
+
+
+const reactionTitle =
+    document.getElementById(
+        "reactionTitle"
+    );
+
+
+const reactionText =
+    document.getElementById(
+        "reactionText"
+    );
+
+
+const nextButton =
+    document.getElementById(
+        "nextButton"
+    );
+
+
+const ending =
+    document.getElementById(
+        "ending"
+    );
+
+
+const endingTitle =
+    document.getElementById(
+        "endingTitle"
+    );
+
+
+const endingText =
+    document.getElementById(
+        "endingText"
+    );
+
+
+const restartButton =
+    document.getElementById(
+        "restartButton"
+    );
+
+
+/* ==================================================
+   IMAGE HELPER
+================================================== */
+
+function imageMarkup(
+    source,
+    alt = ""
+) {
+
     return `
-      <div class="feed">
-        ${state.log.slice().reverse().map(item => `
-          <div class="feed-item">
-            <div class="tag">Turn ${item.turn}</div>
-            <strong>${item.title}</strong>
-            <div class="muted">${item.note}</div>
-          </div>
-        `).join("")}
-      </div>
-    `;
-  }
-
-  function renderEvent(event) {
-    app.innerHTML = `
-      <div class="shell">
-        <div class="topbar">
-          <div class="brand">Influence</div>
-          <div class="turn">TURN ${state.turn} / ${events.length}</div>
-        </div>
-
-        <div class="layout">
-          <section>
-            <div class="panel">
-              ${renderWorld()}
-            </div>
-
-            <div class="panel">
-              <div class="eyebrow">World state</div>
-              ${renderStats()}
-            </div>
-          </section>
-
-          <aside>
-            <div class="panel">
-              <div class="eyebrow">News desk</div>
-              <h2>${event.title}</h2>
-              <p class="muted">${event.copy}</p>
-
-              <div class="evidence">
-                ${event.evidence.map(([label, text]) => `
-                  <div class="evidence-row">
-                    <div class="evidence-label">${label}</div>
-                    <div>${text}</div>
-                  </div>
-                `).join("")}
-              </div>
-
-              <div class="eyebrow">Choose what the public sees</div>
-              <div class="choices">
-                ${event.choices.map((choice, index) => `
-                  <button class="choice" data-choice="${index}">
-                    <strong>${choice.title}</strong>
-                    <span>${choice.desc}</span>
-                  </button>
-                `).join("")}
-              </div>
-            </div>
-
-            <div class="panel">
-              <div class="eyebrow">Your feed</div>
-              ${renderFeed()}
-            </div>
-          </aside>
-        </div>
-      </div>
+        <img
+            src="${source}"
+            alt="${alt}"
+            draggable="false"
+        >
     `;
 
-    document.querySelectorAll("[data-choice]").forEach(button => {
-      button.addEventListener("click", () => choose(event, Number(button.dataset.choice)));
-    });
-  }
+}
 
-  function choose(event, index) {
-    const choice = event.choices[index];
-    applyEffect(choice.effect);
 
-    state.log.push({
-      turn: state.turn,
-      title: choice.title,
-      note: choice.note
-    });
+/* ==================================================
+   RENDER WORLD
+================================================== */
 
-    if (state.turn >= events.length) {
-      state.outcome = getOutcome();
-      renderOutcome();
-      return;
+function renderWorld() {
+
+    world.innerHTML =
+        factions
+            .map(
+                (faction) => {
+
+                    const width =
+                        Math.max(
+                            5,
+                            Math.min(
+                                100,
+                                faction.strength
+                            )
+                        );
+
+
+                    return `
+
+                        <div class="faction">
+
+                            <div class="faction-name">
+                                ${faction.name}
+                            </div>
+
+
+                            <div class="faction-symbol">
+                                ${faction.symbol}
+                            </div>
+
+
+                            <div class="faction-state">
+
+                                ${faction.state}
+
+                                <br>
+
+                                anger:
+                                ${Math.round(
+                                    faction.anger
+                                )}
+
+                                <br>
+
+                                trust:
+                                ${Math.round(
+                                    faction.trust
+                                )}
+
+                            </div>
+
+
+                            <div class="faction-bar">
+
+                                <div
+                                    class="faction-bar-fill"
+                                    style="width:${width}%"
+                                >
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+                }
+            )
+            .join("");
+
+
+    trust.textContent =
+        Math.round(
+            state.trust
+        );
+
+
+    reach.textContent =
+        Math.round(
+            state.reach
+        );
+
+
+    tension.textContent =
+        Math.round(
+            state.tension
+        );
+
+}
+
+
+/* ==================================================
+   LOAD EVENT
+================================================== */
+
+function loadEvent() {
+
+    const event =
+        events[state.turn];
+
+
+    turnNumber.textContent =
+        `${state.turn + 1} / ${state.maxTurns}`;
+
+
+    eventTitle.textContent =
+        event.title;
+
+
+    eventText.textContent =
+        event.text;
+
+
+    sources.textContent =
+        event.sources;
+
+
+    choices.innerHTML =
+        event.choices
+            .map(
+                (choice, index) => {
+
+                    return `
+
+                        <button
+                            class="choice"
+                            data-index="${index}"
+                        >
+
+                            <div class="choice-cat">
+
+                                ${imageMarkup(
+                                    choice.image,
+                                    "meme reaction"
+                                )}
+
+                            </div>
+
+
+                            <div class="choice-content">
+
+                                <div class="choice-title">
+                                    ${choice.title}
+                                </div>
+
+
+                                <div class="choice-caption">
+                                    ${choice.caption}
+                                </div>
+
+                            </div>
+
+                        </button>
+
+                    `;
+
+                }
+            )
+            .join("");
+
+
+    choices
+        .querySelectorAll(
+            ".choice"
+        )
+        .forEach(
+            (button) => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const index =
+                            Number(
+                                button.dataset.index
+                            );
+
+
+                        choose(
+                            event.choices[index]
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+    reactionSection.classList.add(
+        "hidden"
+    );
+
+}
+
+
+/* ==================================================
+   PLAYER CHOICE
+================================================== */
+
+function choose(choice) {
+
+    const buttons =
+        choices.querySelectorAll(
+            ".choice"
+        );
+
+
+    buttons.forEach(
+        (button) => {
+
+            button.disabled =
+                true;
+
+        }
+    );
+
+
+    applyChoiceEffects(
+        choice
+    );
+
+
+    showReaction(
+        choice
+    );
+
+
+    renderWorld();
+
+}
+
+
+/* ==================================================
+   EFFECTS
+================================================== */
+
+function applyChoiceEffects(
+    choice
+) {
+
+    switch (
+        choice.type
+    ) {
+
+        case "responsible":
+
+            state.trust += 3;
+
+            state.reach -= 1;
+
+            state.tension -= 6;
+
+
+            factions.forEach(
+                (faction) => {
+
+                    faction.anger -= 4;
+
+                    faction.trust += 2;
+
+                    faction.state =
+                        "DE-ESCALATING";
+
+                }
+            );
+
+            break;
+
+
+        case "neutral":
+
+            state.trust += 1;
+
+            state.reach += 2;
+
+            state.tension -= 1;
+
+
+            factions.forEach(
+                (faction) => {
+
+                    faction.anger -= 1;
+
+                    faction.state =
+                        "WATCHING";
+
+                }
+            );
+
+            break;
+
+
+        case "inflammatory":
+
+            state.trust -= 4;
+
+            state.reach += 6;
+
+            state.tension += 8;
+
+
+            factions.forEach(
+                (faction) => {
+
+                    faction.anger += 5;
+
+                    faction.trust -= 3;
+
+                    faction.state =
+                        "ON EDGE";
+
+                }
+            );
+
+            break;
+
+
+        case "sensational":
+
+            state.trust -= 8;
+
+            state.reach += 11;
+
+            state.tension += 14;
+
+
+            factions.forEach(
+                (faction) => {
+
+                    faction.anger += 10;
+
+                    faction.trust -= 7;
+
+                    faction.state =
+                        "MOBILIZING";
+
+                    faction.strength += 4;
+
+                }
+            );
+
+            break;
+
     }
 
-    state.turn += 1;
-    renderEvent(events[state.turn - 1]);
-  }
 
-  function renderOutcome() {
-    const outcome = state.outcome || getOutcome();
+    state.trust =
+        clamp(
+            state.trust,
+            0,
+            100
+        );
 
-    app.innerHTML = `
-      <div class="shell">
-        <div class="topbar">
-          <div class="brand">Influence</div>
-          <div class="turn">FINAL REPORT</div>
-        </div>
 
-        <div class="panel result">
-          <div>
-            <div class="eyebrow">Outcome</div>
-            <div class="result-outcome">${outcome.title}</div>
-            <p class="muted">${outcome.body}</p>
+    state.reach =
+        clamp(
+            state.reach,
+            0,
+            100
+        );
 
-            <div class="panel" style="margin:18px 0 0;">
-              <div class="eyebrow">What changed</div>
-              ${renderStats()}
-            </div>
 
-            <ul class="result-list">
-              ${outcome.details.map(item => `<li>${item}</li>`).join("")}
-            </ul>
+    state.tension =
+        clamp(
+            state.tension,
+            0,
+            100
+        );
 
-            <div class="ending-message">
-              <strong>Stay aware.</strong> Before you share, ask what is confirmed, what is uncertain, and why the story is trying to make you react.
-            </div>
-          </div>
 
-          <div>
-            <div class="panel" style="margin:0 0 14px;">
-              <div class="eyebrow">Key idea</div>
-              <p style="margin:0;">Information did not just describe the crisis. It changed how people reacted to it — and those reactions changed the crisis itself.</p>
-            </div>
-            <button class="primary" id="restart">Play again</button>
-          </div>
-        </div>
-      </div>
-    `;
+    factions.forEach(
+        (faction) => {
 
-    document.getElementById("restart").addEventListener("click", restart);
-  }
+            faction.anger =
+                clamp(
+                    faction.anger,
+                    0,
+                    100
+                );
 
-  function restart() {
-    state.turn = 1;
-    state.trust = 62;
-    state.reach = 54;
-    state.anger = 35;
-    state.tension = 28;
-    state.aster = 3;
-    state.vara = 3;
-    state.novi = 3;
-    state.outcome = null;
-    state.log = [];
-    renderEvent(events[0]);
-  }
 
-  renderEvent(events[0]);
-})();
+            faction.trust =
+                clamp(
+                    faction.trust,
+                    0,
+                    100
+                );
+
+
+            faction.strength =
+                clamp(
+                    faction.strength,
+                    10,
+                    100
+                );
+
+        }
+    );
+
+}
+
+
+/* ==================================================
+   REACTION
+================================================== */
+
+function showReaction(
+    choice
+) {
+
+    const reaction =
+        reactions[
+            choice.type
+        ];
+
+
+    reactionCat.innerHTML =
+        imageMarkup(
+            reaction.image,
+            "reaction meme"
+        );
+
+
+    reactionTitle.textContent =
+        reaction.title;
+
+
+    reactionText.textContent =
+        reaction.text;
+
+
+    reactionSection.classList.remove(
+        "hidden"
+    );
+
+
+    nextButton.focus();
+
+}
+
+
+/* ==================================================
+   NEXT EVENT
+================================================== */
+
+nextButton.addEventListener(
+    "click",
+    () => {
+
+        state.turn++;
+
+
+        if (
+            state.turn >=
+            state.maxTurns
+        ) {
+
+            finishGame();
+
+            return;
+
+        }
+
+
+        loadEvent();
+
+
+        window.scrollTo(
+            {
+                top: 0,
+                behavior: "smooth"
+            }
+        );
+
+    }
+);
+
+
+/* ==================================================
+   ENDING
+================================================== */
+
+function finishGame() {
+
+    document
+        .getElementById(
+            "decisionSection"
+        )
+        .classList.add(
+            "hidden"
+        );
+
+
+    reactionSection.classList.add(
+        "hidden"
+    );
+
+
+    document
+        .getElementById(
+            "eventSection"
+        )
+        .classList.add(
+            "hidden"
+        );
+
+
+    document
+        .getElementById(
+            "worldSection"
+        )
+        .classList.add(
+            "hidden"
+        );
+
+
+    ending.classList.remove(
+        "hidden"
+    );
+
+
+    let result;
+
+
+    if (
+        state.tension <= 25 &&
+        state.trust >= 65
+    ) {
+
+        result = {
+
+            title:
+                "DE-ESCALATION",
+
+            text:
+                "The crisis did not disappear, but your reporting gave people time to verify claims and allowed diplomacy to continue."
+
+        };
+
+    }
+
+    else if (
+        state.tension >= 70
+    ) {
+
+        result = {
+
+            title:
+                "ESCALATION",
+
+            text:
+                "Fear became momentum. Repeated sensational and inflammatory stories pushed public anger high enough that the factions began preparing for conflict."
+
+        };
+
+    }
+
+    else {
+
+        result = {
+
+            title:
+                "INFORMATION CHAOS",
+
+            text:
+                "Nobody knows exactly what to believe anymore. Conflicting stories dominate the conversation, trust falls, and rumours become more powerful than facts."
+
+        };
+
+    }
+
+
+    endingTitle.textContent =
+        result.title;
+
+
+    endingText.textContent =
+        result.text;
+
+}
+
+
+/* ==================================================
+   RESTART
+================================================== */
+
+restartButton.addEventListener(
+    "click",
+    () => {
+
+        window.location.reload();
+
+    }
+);
+
+
+/* ==================================================
+   HELPERS
+================================================== */
+
+function clamp(
+    value,
+    min,
+    max
+) {
+
+    return Math.min(
+        max,
+        Math.max(
+            min,
+            value
+        )
+    );
+
+}
+
+
+/* ==================================================
+   START
+================================================== */
+
+renderWorld();
+
+loadEvent();
