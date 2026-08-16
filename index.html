@@ -1,13 +1,317 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>INFLUENCE</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>INFLUENCE</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 </head>
+
 <body>
-  <main id="app"></main>
-  <script src="game.js"></script>
+
+<main class="game">
+
+    <!-- ==========================
+         HEADER
+    =========================== -->
+
+    <header class="topbar">
+
+        <div>
+            <div class="eyebrow">
+                MEDIA SIMULATION
+            </div>
+
+            <h1>
+                INFLUENCE
+            </h1>
+        </div>
+
+        <div class="turn-box">
+
+            <span>
+                TURN
+            </span>
+
+            <strong id="turnNumber">
+                1 / 8
+            </strong>
+
+        </div>
+
+    </header>
+
+
+    <!-- ==========================
+         WORLD
+    =========================== -->
+
+    <section
+        id="worldSection"
+        class="world-section"
+    >
+
+        <div class="section-label">
+            CURRENT WORLD
+        </div>
+
+
+        <div
+            id="world"
+            class="world"
+        >
+        </div>
+
+
+        <div class="metrics">
+
+            <div class="metric">
+
+                <span>
+                    PUBLIC TRUST
+                </span>
+
+                <strong id="trust">
+                    70
+                </strong>
+
+            </div>
+
+
+            <div class="metric">
+
+                <span>
+                    REACH
+                </span>
+
+                <strong id="reach">
+                    50
+                </strong>
+
+            </div>
+
+
+            <div class="metric">
+
+                <span>
+                    TENSION
+                </span>
+
+                <strong id="tension">
+                    20
+                </strong>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==========================
+         EVENT
+    =========================== -->
+
+    <section
+        id="eventSection"
+        class="event-section"
+    >
+
+        <div class="section-label">
+            WHAT HAPPENED
+        </div>
+
+
+        <div class="event-card">
+
+            <div
+                id="eventTitle"
+                class="event-title"
+            >
+                Loading...
+            </div>
+
+
+            <p
+                id="eventText"
+                class="event-text"
+            >
+            </p>
+
+
+            <div
+                id="sources"
+                class="sources"
+            >
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==========================
+         DECISIONS
+    =========================== -->
+
+    <section
+        id="decisionSection"
+        class="decision-section"
+    >
+
+        <div class="section-label">
+            WHAT DO YOU PUBLISH?
+        </div>
+
+
+        <div
+            id="choices"
+            class="choices"
+        >
+        </div>
+
+    </section>
+
+
+    <!-- ==========================
+         REACTION
+    =========================== -->
+
+    <section
+        id="reactionSection"
+        class="reaction-section hidden"
+    >
+
+        <div class="section-label">
+            THE INTERNET REACTS
+        </div>
+
+
+        <div class="reaction-card">
+
+            <div
+                id="reactionCat"
+                class="reaction-cat"
+            >
+            </div>
+
+
+            <div>
+
+                <div
+                    id="reactionTitle"
+                    class="reaction-title"
+                >
+                </div>
+
+
+                <p
+                    id="reactionText"
+                    class="reaction-text"
+                >
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <button
+            id="nextButton"
+            class="next-button"
+        >
+            NEXT EVENT →
+        </button>
+
+    </section>
+
+
+    <!-- ==========================
+         ENDING
+    =========================== -->
+
+    <section
+        id="ending"
+        class="ending hidden"
+    >
+
+        <div class="ending-inner">
+
+            <div class="ending-mark">
+                //
+            </div>
+
+
+            <div
+                id="endingTitle"
+                class="ending-title"
+            >
+            </div>
+
+
+            <p
+                id="endingText"
+                class="ending-text"
+            >
+            </p>
+
+
+            <div class="lesson">
+
+                <strong>
+                    THE POINT
+                </strong>
+
+
+                <p>
+                    Information does not only
+                    describe the world.
+                    It can change how people
+                    behave inside it.
+                </p>
+
+            </div>
+
+
+            <div class="final-message">
+
+                <span>
+                    BEFORE YOU SHARE:
+                </span>
+
+
+                <strong>
+                    PAUSE. CHECK. THINK.
+                </strong>
+
+            </div>
+
+
+            <button
+                id="restartButton"
+                class="next-button"
+            >
+                PLAY AGAIN
+            </button>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<script src="game.js"></script>
+
 </body>
 </html>
